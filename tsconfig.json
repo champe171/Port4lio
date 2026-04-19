@@ -27,14 +27,11 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    "components/Avatar.jsx",
-    "components/ParticlesContainer.tsj",
     "src/app/head.tsx",
     "pages/about/page.jsx",
     "src/pages/_app.ts",
     "src/pages/_app.tsx",
-    "pages/head.js",
-    "pages/api/contact.ts"
+    "pages/head.js"
   ],
   "exclude": ["node_modules"]
 }

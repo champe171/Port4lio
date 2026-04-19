@@ -69,9 +69,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         return res.status(500).json({ error: 'Failed to load updated profile' })
       }
 
-      const summary = `Updated profile: ${parsed.fullName || parsed.username || '-'} (${
-        Array.isArray(parsed.jobTitle) ? parsed.jobTitle.join(', ') || '-' : '-'
-      }) at ${now.toISOString()}`
+      // Trigger ISR revalidation — fire and forget, non-fatal
+      try {
+        await res.revalidate('/')
+      } catch (revalError) {
+        console.warn('ISR revalidation failed:', revalError)
+      }
+
+      const summary = `Updated profile: ${parsed.fullName || parsed.username || '-'} at ${now.toISOString()}`
       try {
         await sendMail(
           process.env.MAIL_TO!,

@@ -2,33 +2,33 @@
 
 import React, { useEffect, useMemo, useState } from 'react'
 
-import type { Profile, ServiceItem } from '@/types/profile'
+import type { Profile } from '@/types/profile'
 import { MAX_PROFILE_JSON_BYTES } from '@/lib/upload-limits'
 import { getIconCatalog } from '@/utils/iconResolver'
 import { useApp } from '@/context/AppContext'
 import IconPickerModal from '@/components/settings/IconPickerModal'
 import SkillsSection from '@/components/settings/SkillsSection'
-import ServicesSection from '@/components/settings/ServicesSection'
-import ProjectsSection from '@/components/settings/ProjectsSection'
 import SettingLoading from '@/components/settings/SettingLoading'
 import SettingToolbar from '@/components/settings/SettingToolbar'
 import SettingErrorBanner from '@/components/settings/SettingErrorBanner'
 import BasicsSection from '@/components/settings/BasicsSection'
 import SocialsSection from '@/components/settings/SocialsSection'
-import StatsSection from '@/components/settings/StatsSection'
-import AboutSection from '@/components/settings/AboutSection'
+import HeroSection from '@/components/settings/HeroSection'
+import IntroSection from '@/components/settings/IntroSection'
 import ExperienceSection from '@/components/settings/ExperienceSection'
 import EducationSection from '@/components/settings/EducationSection'
 import CertificatesSection from '@/components/settings/CertificatesSection'
-import ProfilePreviewPanel from '@/components/settings/ProfilePreviewPanel'
+import ContactSection from '@/components/settings/ContactSection'
 import OwnerAuthGate from '@/components/settings/OwnerAuthGate'
+import AdminLayout from '@/components/layouts/AdminLayout'
 import {
   makeEmptyProfile,
-  makeMockProfile,
   normalizeProfile,
+  uploadAssetToCloudinary,
 } from '@/components/settings/settings-utils'
 import type { IconPickerTarget, UploadingState } from '@/components/settings/types'
 import { cleanProfileForSave } from '@/components/settings/cleanProfileForSave'
+import type { ReactNode } from 'react'
 
 function Setting() {
   const { profile: appProfile, setProfile: setAppProfile } = useApp()
@@ -41,28 +41,22 @@ function Setting() {
 
   const [uploading, setUploading] = useState<UploadingState>({
     avatar: false,
-    background: false,
     cv: false,
-    projects: {},
+    heroLeft: false,
+    heroRight: false,
+    introPhoto: false,
+    expCoverUploading: {},
   })
 
   useEffect(() => {
-    // Hydrate editor state from app-level profile (already fetched by AppProvider).
     if (!appProfile) return
     setProfile(normalizeProfile(appProfile))
     setLoading(false)
   }, [appProfile])
 
   useEffect(() => {
-    // If profile doesn't exist yet, show loading state.
     setLoading(appProfile == null)
   }, [appProfile])
-
-  const preview = useMemo(() => {
-    const bg = profile.backgroundImage || ''
-    const av = profile.avatar || ''
-    return { bg, av }
-  }, [profile.backgroundImage, profile.avatar])
 
   const iconCatalog = useMemo(() => getIconCatalog(), [])
   const filteredIcons = useMemo(() => {
@@ -104,32 +98,61 @@ function Setting() {
     }
   }
 
-  const updateService = (idx: number, patch: Partial<ServiceItem>) => {
-    setProfile(p => {
-      const next = [...p.services]
-      next[idx] = { ...next[idx], ...patch }
-      return { ...p, services: next }
-    })
+  const handleUpload = async (
+    file: File,
+    kind: 'avatar' | 'cv' | 'hero-left' | 'hero-right' | 'intro-photo' | 'exp-cover',
+    expIndex?: number,
+  ) => {
+    const setBusy = (busy: boolean) => {
+      setUploading(prev => {
+        if (kind === 'exp-cover' && typeof expIndex === 'number') {
+          const next = { ...prev.expCoverUploading }
+          if (busy) next[expIndex] = true
+          else delete next[expIndex]
+          return { ...prev, expCoverUploading: next }
+        }
+        if (kind === 'intro-photo') {
+          return { ...prev, introPhoto: busy }
+        }
+        const uploadKey =
+          kind === 'hero-left' ? 'heroLeft' : kind === 'hero-right' ? 'heroRight' : kind
+        return { ...prev, [uploadKey]: busy }
+      })
+    }
+
+    setBusy(true)
+    try {
+      const url = await uploadAssetToCloudinary(file, kind)
+      if (kind === 'intro-photo') {
+        setProfile(p => ({ ...p, introPhoto: url }))
+      } else if (kind === 'exp-cover' && typeof expIndex === 'number') {
+        setProfile(p => {
+          const exps = [...(p.experiences ?? [])]
+          const cur = exps[expIndex]
+          if (!cur) return p
+          exps[expIndex] = { ...cur, coverPhoto: url }
+          return { ...p, experiences: exps }
+        })
+      } else {
+        const fieldMap: Record<'avatar' | 'cv' | 'hero-left' | 'hero-right', keyof Profile> = {
+          avatar: 'avatar',
+          cv: 'cv',
+          'hero-left': 'heroPhotoLeft',
+          'hero-right': 'heroPhotoRight',
+        }
+        setProfile(prev => ({ ...prev, [fieldMap[kind as keyof typeof fieldMap]]: url }))
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Upload failed')
+    } finally {
+      setBusy(false)
+    }
   }
 
   const applyIconCode = (iconCode: string) => {
     if (!iconPickerTarget) return
 
-    if (iconPickerTarget.kind === 'skill') {
-      setProfile(p => {
-        const nextSkills = [...p.skills]
-        const group = nextSkills[iconPickerTarget.groupIndex]
-        if (!group) return p
-        const nextItems = [...group.items]
-        const currentItem = nextItems[iconPickerTarget.itemIndex]
-        if (!currentItem) return p
-        nextItems[iconPickerTarget.itemIndex] = { ...currentItem, icon: iconCode }
-        nextSkills[iconPickerTarget.groupIndex] = { ...group, items: nextItems }
-        return { ...p, skills: nextSkills }
-      })
-    } else if (iconPickerTarget.kind === 'service') {
-      updateService(iconPickerTarget.serviceIndex, { icon: iconCode })
-    } else if (iconPickerTarget.kind === 'social') {
+    if (iconPickerTarget.kind === 'social') {
       setProfile(p => {
         const next = [...p.socials]
         const cur = next[iconPickerTarget.socialIndex]
@@ -143,6 +166,10 @@ function Setting() {
     setIconQuery('')
   }
 
+  const onChange = (updates: Partial<Profile>) => {
+    setProfile(p => ({ ...p, ...updates }))
+  }
+
   if (loading) return <SettingLoading />
 
   return (
@@ -152,57 +179,50 @@ function Setting() {
           <SettingToolbar
             saving={saving}
             uploading={uploading}
-            onFillMock={() => {
-              setError(null)
-              setProfile(normalizeProfile(makeMockProfile()))
-            }}
             onSave={onSave}
           />
 
           <SettingErrorBanner message={error} />
 
-          <div className='grid grid-cols-1 gap-6 lg:grid-cols-[1fr_360px]'>
-            <div className='space-y-6'>
-              <BasicsSection
-                profile={profile}
-                setProfile={setProfile}
-                preview={preview}
-                uploading={uploading}
-                setUploading={setUploading}
-                setError={setError}
-              />
-              <div className='grid grid-cols-1 gap-6 lg:grid-cols-2'>
-                <SocialsSection
-                  profile={profile}
-                  setProfile={setProfile}
-                  setIconPickerTarget={setIconPickerTarget}
-                />
-                <StatsSection profile={profile} setProfile={setProfile} />
-              </div>
-              <AboutSection profile={profile} setProfile={setProfile} />
-              <SkillsSection
-                profile={profile}
-                setProfile={setProfile}
-                setIconPickerTarget={setIconPickerTarget}
-              />
-              <ExperienceSection profile={profile} setProfile={setProfile} />
-              <EducationSection profile={profile} setProfile={setProfile} />
-              <CertificatesSection profile={profile} setProfile={setProfile} />
-              <ServicesSection
-                profile={profile}
-                setProfile={setProfile}
-                setIconPickerTarget={setIconPickerTarget}
-              />
-              <ProjectsSection
-                profile={profile}
-                setProfile={setProfile}
-                setError={setError}
-                uploading={uploading}
-                setUploading={setUploading}
-              />
-            </div>
-
-            <ProfilePreviewPanel profile={profile} preview={preview} />
+          <div className='space-y-6'>
+            <BasicsSection
+              profile={profile}
+              setProfile={setProfile}
+              uploading={uploading}
+              setUploading={setUploading}
+              setError={setError}
+            />
+            <SocialsSection
+              profile={profile}
+              setProfile={setProfile}
+              setIconPickerTarget={setIconPickerTarget}
+            />
+            <HeroSection
+              profile={profile}
+              onChange={onChange}
+              uploading={uploading}
+              onUpload={handleUpload}
+            />
+            <IntroSection
+              profile={profile}
+              onChange={onChange}
+              onUpload={(field, file) => {
+                if (field === 'introPhoto') void handleUpload(file, 'intro-photo')
+              }}
+              uploading={{ introPhoto: uploading.introPhoto }}
+            />
+            <EducationSection profile={profile} setProfile={setProfile} />
+            <CertificatesSection profile={profile} setProfile={setProfile} />
+            <SkillsSection profile={profile} onChange={onChange} />
+            <ExperienceSection
+              profile={profile}
+              onChange={onChange}
+              onUpload={(index, field, file) => {
+                if (field === 'coverPhoto') void handleUpload(file, 'exp-cover', index)
+              }}
+              uploading={uploading}
+            />
+            <ContactSection profile={profile} onChange={onChange} />
           </div>
 
           <IconPickerModal
@@ -221,5 +241,7 @@ function Setting() {
     </OwnerAuthGate>
   )
 }
+
+Setting.getLayout = (page: ReactNode) => <AdminLayout>{page}</AdminLayout>
 
 export default Setting

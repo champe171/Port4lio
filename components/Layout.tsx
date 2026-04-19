@@ -1,32 +1,5 @@
-import Header from '@/components/Header'
-import Nav from '@/components/Nav'
-import ProfileFetchStatus from '@/components/ProfileFetchStatus'
-import TopLeftImg from '@/components/TopLeftImg'
-import { Sora } from 'next/font/google'
-import Head from 'next/head'
-
-const sora = Sora({
-  subsets: ['latin'],
-  variable: '--font-sora',
-  weight: ['100', '200', '300', '400', '500', '600', '700', '800'],
-})
-
-export default function RootLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <div className={`page bg-site text-white bg-cover bg-no-repeat ${sora.variable} font-sora relative`}>
-      <Head>
-        <title>Anh Khoa | Full Stack Developer</title>
-        <meta
-          name='description'
-          content='I help designers, businesses and startups bring their ideas to life. Powered by passion, dream and coffee.'
-        />
-        <link rel='icon' type='image/x-icon' href='/favicon.ico' />
-      </Head>
-      <TopLeftImg />
-      <Nav />
-      <Header />
-      <ProfileFetchStatus />
-      {children}
-    </div>
-  )
+// Replaced by PortfolioLayout and AdminLayout in CHUNK-04.
+// This file kept to avoid import errors during transition.
+export default function Layout({ children }: { children: React.ReactNode }) {
+  return <>{children}</>
 }

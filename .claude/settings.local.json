@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git rm *)",
+      "Bash(npx tsc *)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('scripts:', list\\(d.get\\('scripts',{}\\).keys\\(\\)\\)\\)\")"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\Anpha Right Choice\\.gstack\\projects\\NaKMiers-Port4lio"
+    ]
+  }
+}

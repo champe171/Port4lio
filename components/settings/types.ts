@@ -1,13 +1,13 @@
 export type IconPickerTarget =
-  | { kind: 'skill'; groupIndex: number; itemIndex: number }
-  | { kind: 'service'; serviceIndex: number }
   | { kind: 'social'; socialIndex: number }
   | null
 
 export type UploadingState = {
   avatar: boolean
-  background: boolean
   cv: boolean
-  projects: Record<number, boolean>
+  heroLeft: boolean
+  heroRight: boolean
+  introPhoto: boolean
+  /** index → uploading cover photo for that experience row */
+  expCoverUploading: Record<number, boolean>
 }
-

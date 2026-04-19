@@ -1,48 +1,11 @@
 import mongoose, { Schema } from 'mongoose'
 
-/** Single portfolio document id (singleton row in `profile` collection). */
 export const PROFILE_DOCUMENT_ID = process.env.PROFILE_DOCUMENT_ID!
 
+// --- sub-schemas ---
+
 const socialLinkSchema = new Schema(
-  {
-    link: { type: String, default: '' },
-    icon: { type: String, default: '' },
-    name: { type: String, default: '' },
-  },
-  { _id: false }
-)
-
-const statSchema = new Schema(
-  {
-    label: { type: String, default: '' },
-    value: { type: Number, default: 0 },
-  },
-  { _id: false }
-)
-
-const skillItemSchema = new Schema(
-  {
-    icon: { type: String, default: '' },
-    name: { type: String, default: '' },
-  },
-  { _id: false }
-)
-
-const skillGroupSchema = new Schema(
-  {
-    groupName: { type: String, default: '' },
-    items: { type: [skillItemSchema], default: [] },
-  },
-  { _id: false }
-)
-
-const experienceSchema = new Schema(
-  {
-    companyName: { type: String, default: '' },
-    position: { type: String, default: '' },
-    start: { type: String, default: '' },
-    end: { type: String, default: '' },
-  },
+  { link: { type: String, default: '' }, icon: { type: String, default: '' }, name: { type: String, default: '' } },
   { _id: false }
 )
 
@@ -57,72 +20,76 @@ const educationSchema = new Schema(
 )
 
 const certificateSchema = new Schema(
+  { link: { type: String, default: '' }, name: { type: String, default: '' } },
+  { _id: false }
+)
+
+const skillGroupSchema = new Schema(
   {
-    link: { type: String, default: '' },
-    name: { type: String, default: '' },
+    groupName: { type: String, default: '' },
+    tools: [
+      {
+        name: { type: String, default: '' },
+        icon: { type: String, default: '' },
+      },
+    ],
   },
   { _id: false }
 )
 
-const serviceItemSchema = new Schema(
+const experienceSchema = new Schema(
   {
-    icon: { type: String, default: '' },
-    title: { type: String, default: '' },
-    description: { type: String, default: '' },
+    company: { type: String, default: '' },
+    role: { type: String, default: '' },
+    period: { type: String, default: '' },
+    summary: { type: String, default: '' },
+    coverPhoto: { type: String, default: '' },
+    // Case-study mode (detailed)
+    problem: { type: String, default: '' },
+    strategy: { type: String, default: '' },
+    execution: { type: [String], default: [] },
+    result: { type: [String], default: [] },
+    metrics: { type: String, default: '' },
+    // Simple mode (highlights only)
+    highlights: { type: [String], default: [] },
   },
   { _id: false }
 )
 
-const projectPartSchema = new Schema(
-  {
-    image: { type: String, default: '' },
-    description: { type: String, default: '' },
-    link: { type: String, default: '' },
-  },
-  { _id: false }
-)
-
-const projectItemSchema = new Schema(
-  {
-    title: { type: String, default: '' },
-    parts: { type: [projectPartSchema], default: [] },
-  },
-  { _id: false }
-)
+// --- main profile schema ---
 
 const profileSchema = new Schema(
   {
     _id: { type: String, default: PROFILE_DOCUMENT_ID },
+    // Basics
     cv: { type: String, default: '' },
     fullName: { type: String, default: '' },
     username: { type: String, default: '' },
-    jobTitle: { type: [String], default: [] },
-    description: { type: String, default: '' },
     avatar: { type: String, default: '' },
-    backgroundImage: { type: String, default: '' },
     socials: { type: [socialLinkSchema], default: [] },
-    profileHeading: { type: String, default: '' },
-    profileSubHeading: { type: String, default: '' },
-    stats: { type: [statSchema], default: [] },
-    aboutMe: { type: String, default: '' },
-    skills: { type: [skillGroupSchema], default: [] },
-    experience: { type: [experienceSchema], default: [] },
+    // Hero section
+    tagline: { type: String, default: '' },
+    heroPhotoLeft: { type: String, default: '' },
+    heroPhotoRight: { type: String, default: '' },
+    // Introduction section
+    introduction: { type: String, default: '' },
+    introPhoto: { type: String, default: '' },
+    // Education section
     education: { type: [educationSchema], default: [] },
     certificates: { type: [certificateSchema], default: [] },
-    serviceHeading: { type: String, default: '' },
-    serviceSubHeading: { type: String, default: '' },
-    briefServices: { type: [String], default: [] },
-    services: { type: [serviceItemSchema], default: [] },
-    workHeading: { type: String, default: '' },
-    workSubHeading: { type: String, default: '' },
-    projects: { type: [projectItemSchema], default: [] },
+    // Skills section
+    skillGroups: { type: [skillGroupSchema], default: [] },
+    // Experience section
+    experiences: { type: [experienceSchema], default: [] },
+    // Contact section
+    phone: { type: String, default: '' },
+    email: { type: String, default: '' },
+    linkedinUrl: { type: String, default: '' },
+    // Timestamps
     createdAt: { type: Date },
     updatedAt: { type: Date },
   },
-  {
-    collection: 'profile',
-    versionKey: false,
-  }
+  { collection: 'profile', versionKey: false }
 )
 
 if (process.env.NODE_ENV !== 'production' && mongoose.models.Profile) {

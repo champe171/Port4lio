@@ -4,28 +4,6 @@ export type SocialLink = {
   name: string
 }
 
-export type Stat = {
-  label: string
-  value: number
-}
-
-export type SkillItem = {
-  icon: string
-  name: string
-}
-
-export type SkillGroup = {
-  groupName: string
-  items: SkillItem[]
-}
-
-export type ExperienceItem = {
-  companyName: string
-  position: string
-  start: string // ISO
-  end: string // ISO
-}
-
 export type EducationItem = {
   schoolName: string
   major: string
@@ -38,53 +16,56 @@ export type Certificate = {
   name: string
 }
 
-export type ServiceItem = {
-  icon: string
-  title: string
-  description: string
+// Each tool now has an optional icon slug (for devicon CDN)
+export type ToolItem = {
+  name: string
+  icon?: string // e.g. "react", "figma", "nextjs" — used as devicon class
 }
 
-export type ProjectPart = {
-  image: string
-  description: string
-  link: string
+export type SkillGroup = {
+  groupName: string
+  tools: ToolItem[]
 }
 
-export type ProjectItem = {
-  title: string
-  parts: ProjectPart[]
+export type ExperienceItem = {
+  company: string
+  role: string
+  period: string
+  summary: string
+  coverPhoto?: string // Cloudinary URL — shown on experience overview slide
+  // Case-study mode
+  problem: string
+  strategy: string
+  execution: string[]
+  result: string[]
+  metrics: string
+  // Simple mode
+  highlights: string[]
 }
 
 export type Profile = {
+  // Basics
   cv?: string
-
   fullName: string
   username: string
-  jobTitle: string[]
-  description: string
-
   avatar?: string
-  backgroundImage?: string
-
   socials: SocialLink[]
-
-  profileHeading: string
-  profileSubHeading: string
-  stats: Stat[]
-
-  aboutMe: string
-
-  skills: SkillGroup[]
-  experience: ExperienceItem[]
+  // Hero
+  tagline: string
+  heroPhotoLeft: string
+  heroPhotoRight: string
+  // Introduction
+  introduction: string
+  introPhoto?: string // Cloudinary URL — shown in Introduction section left column
+  // Education
   education: EducationItem[]
   certificates: Certificate[]
-
-  serviceHeading: string
-  serviceSubHeading: string
-  briefServices: string[]
-  services: ServiceItem[]
-
-  workHeading: string
-  workSubHeading: string
-  projects: ProjectItem[]
+  // Skills
+  skillGroups: SkillGroup[]
+  // Experience
+  experiences: ExperienceItem[]
+  // Contact
+  phone: string
+  email: string
+  linkedinUrl: string
 }

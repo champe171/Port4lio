@@ -1,23 +1,13 @@
 import AppProvider from '@/context/AppContext'
 import '@/styles/globals.css'
-import { AnimatePresence, motion } from 'framer-motion'
-import { usePathname } from 'next/navigation'
-import Layout from '../components/Layout'
-import Transition from '../components/Transition'
+import type { AppProps } from 'next/app'
+import type { ReactNode } from 'react'
 
-function App({ Component, pageProps }: { Component: any; pageProps: any }) {
-  const pathname = usePathname()
-
+function App({ Component, pageProps }: AppProps & { Component: { getLayout?: (page: ReactNode) => ReactNode } }) {
+  const getLayout = Component.getLayout ?? ((page: ReactNode) => page)
   return (
     <AppProvider>
-      <Layout>
-        <AnimatePresence mode='wait'>
-          <motion.div key={pathname}>
-            <Transition />
-            <Component {...pageProps} />
-          </motion.div>
-        </AnimatePresence>
-      </Layout>
+      {getLayout(<Component {...pageProps} />)}
     </AppProvider>
   )
 }

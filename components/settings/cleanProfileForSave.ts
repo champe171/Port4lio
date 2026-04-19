@@ -3,12 +3,9 @@ import type {
   EducationItem,
   ExperienceItem,
   Profile,
-  ProjectItem,
-  ServiceItem,
-  SocialLink,
   SkillGroup,
-  SkillItem,
-  Stat,
+  SocialLink,
+  ToolItem,
 } from '@/types/profile'
 
 function trimOrEmpty(value: string | undefined): string {
@@ -25,41 +22,6 @@ function pruneSocials(socials: SocialLink[]): SocialLink[] {
     .filter(s => !isBlank(s.name) || !isBlank(s.icon) || !isBlank(s.link))
 }
 
-function pruneStats(stats: Stat[]): Stat[] {
-  return stats
-    .map(st => ({ label: trimOrEmpty(st.label), value: Number(st.value ?? 0) }))
-    .filter(st => !isBlank(st.label) || st.value !== 0)
-}
-
-function pruneSkills(skills: SkillGroup[]): SkillGroup[] {
-  return skills
-    .map(group => {
-      const groupName = trimOrEmpty(group.groupName)
-      const items = (group.items ?? [])
-        .map(it => ({ icon: trimOrEmpty(it.icon), name: trimOrEmpty(it.name) }))
-        .filter(it => !isBlank(it.icon) || !isBlank(it.name))
-      return { groupName, items }
-    })
-    .filter(group => !isBlank(group.groupName) || group.items.length > 0)
-}
-
-function pruneExperience(experience: ExperienceItem[]): ExperienceItem[] {
-  return experience
-    .map(item => ({
-      companyName: trimOrEmpty(item.companyName),
-      position: trimOrEmpty(item.position),
-      start: trimOrEmpty(item.start),
-      end: trimOrEmpty(item.end),
-    }))
-    .filter(
-      item =>
-        !isBlank(item.companyName) ||
-        !isBlank(item.position) ||
-        !isBlank(item.start) ||
-        !isBlank(item.end)
-    )
-}
-
 function pruneEducation(education: EducationItem[]): EducationItem[] {
   return education
     .map(item => ({
@@ -68,46 +30,46 @@ function pruneEducation(education: EducationItem[]): EducationItem[] {
       start: trimOrEmpty(item.start),
       end: trimOrEmpty(item.end),
     }))
-    .filter(
-      item =>
-        !isBlank(item.schoolName) || !isBlank(item.major) || !isBlank(item.start) || !isBlank(item.end)
-    )
+    .filter(item => !isBlank(item.schoolName) || !isBlank(item.major))
 }
 
 function pruneCertificates(certificates: Certificate[]): Certificate[] {
   return certificates
     .map(c => ({ name: trimOrEmpty(c.name), link: trimOrEmpty(c.link) }))
-    .filter(c => !isBlank(c.name) || !isBlank(c.link))
+    .filter(c => !isBlank(c.name))
 }
 
-function pruneServices(services: ServiceItem[]): ServiceItem[] {
-  return services
-    .map(sv => ({
-      icon: trimOrEmpty(sv.icon),
-      title: trimOrEmpty(sv.title),
-      description: trimOrEmpty(sv.description),
+function pruneSkillGroups(groups: SkillGroup[]): SkillGroup[] {
+  return groups
+    .map(g => ({
+      groupName: trimOrEmpty(g.groupName),
+      tools: (g.tools as Array<ToolItem | string>)
+        .map(t =>
+          typeof t === 'string'
+            ? { name: trimOrEmpty(t), icon: '' }
+            : { name: trimOrEmpty(t.name), icon: trimOrEmpty(t.icon) },
+        )
+        .filter(t => t.name.trim()),
     }))
-    .filter(sv => !isBlank(sv.icon) || !isBlank(sv.title) || !isBlank(sv.description))
+    .filter(g => !isBlank(g.groupName) || g.tools.length > 0)
 }
 
-function pruneProjects(projects: ProjectItem[]): ProjectItem[] {
-  return projects
-    .map(prj => {
-      const title = trimOrEmpty(prj.title)
-      const parts = (prj.parts ?? [])
-        .map(part => ({
-          image: trimOrEmpty(part.image),
-          description: trimOrEmpty(part.description),
-          link: trimOrEmpty(part.link),
-        }))
-        .filter(part => !isBlank(part.image) || !isBlank(part.description) || !isBlank(part.link))
-
-      return { ...prj, title, parts }
-    })
-    .filter(
-      prj =>
-        !isBlank(prj.title) || (prj.parts?.length ?? 0) > 0
-    )
+function pruneExperiences(experiences: ExperienceItem[]): ExperienceItem[] {
+  return experiences
+    .map(exp => ({
+      company: trimOrEmpty(exp.company),
+      role: trimOrEmpty(exp.role),
+      period: trimOrEmpty(exp.period),
+      summary: trimOrEmpty(exp.summary),
+      coverPhoto: trimOrEmpty(exp.coverPhoto),
+      problem: trimOrEmpty(exp.problem),
+      strategy: trimOrEmpty(exp.strategy),
+      execution: (exp.execution ?? []).map(s => trimOrEmpty(s)).filter(Boolean),
+      result: (exp.result ?? []).map(s => trimOrEmpty(s)).filter(Boolean),
+      metrics: trimOrEmpty(exp.metrics),
+      highlights: (exp.highlights ?? []).map(s => trimOrEmpty(s)).filter(Boolean),
+    }))
+    .filter(exp => !isBlank(exp.company) || !isBlank(exp.role))
 }
 
 export function cleanProfileForSave(profile: Profile): Partial<Profile> {
@@ -115,41 +77,27 @@ export function cleanProfileForSave(profile: Profile): Partial<Profile> {
     ...profile,
     fullName: trimOrEmpty(profile.fullName),
     username: trimOrEmpty(profile.username),
-    description: trimOrEmpty(profile.description),
     avatar: trimOrEmpty(profile.avatar),
-    backgroundImage: trimOrEmpty(profile.backgroundImage),
-
+    tagline: trimOrEmpty(profile.tagline),
+    heroPhotoLeft: trimOrEmpty(profile.heroPhotoLeft),
+    heroPhotoRight: trimOrEmpty(profile.heroPhotoRight),
+    introduction: trimOrEmpty(profile.introduction),
+    introPhoto: trimOrEmpty(profile.introPhoto),
+    phone: trimOrEmpty(profile.phone),
+    email: trimOrEmpty(profile.email),
+    linkedinUrl: trimOrEmpty(profile.linkedinUrl),
     socials: pruneSocials(profile.socials ?? []),
-    profileHeading: trimOrEmpty(profile.profileHeading),
-    profileSubHeading: trimOrEmpty(profile.profileSubHeading),
-    stats: pruneStats(profile.stats ?? []),
-    aboutMe: trimOrEmpty(profile.aboutMe),
-
-    skills: pruneSkills(profile.skills ?? []),
-    experience: pruneExperience(profile.experience ?? []),
     education: pruneEducation(profile.education ?? []),
     certificates: pruneCertificates(profile.certificates ?? []),
-
-    serviceHeading: trimOrEmpty(profile.serviceHeading),
-    serviceSubHeading: trimOrEmpty(profile.serviceSubHeading),
-    briefServices: (profile.briefServices ?? []).map(s => trimOrEmpty(s)).filter(Boolean),
-    services: pruneServices(profile.services ?? []),
-
-    workHeading: trimOrEmpty(profile.workHeading),
-    workSubHeading: trimOrEmpty(profile.workSubHeading),
-    projects: pruneProjects(profile.projects ?? []),
+    skillGroups: pruneSkillGroups(profile.skillGroups ?? []),
+    experiences: pruneExperiences(profile.experiences ?? []),
   }
 
-  // Omit empty arrays/objects from payload (JSON.stringify drops `undefined` keys).
   if (!cleaned.socials?.length) delete cleaned.socials
-  if (!cleaned.stats?.length) delete cleaned.stats
-  if (!cleaned.skills?.length) delete cleaned.skills
-  if (!cleaned.experience?.length) delete cleaned.experience
   if (!cleaned.education?.length) delete cleaned.education
   if (!cleaned.certificates?.length) delete cleaned.certificates
-  if (!cleaned.briefServices?.length) delete cleaned.briefServices
-  if (!cleaned.services?.length) delete cleaned.services
-  if (!cleaned.projects?.length) delete cleaned.projects
+  if (!cleaned.skillGroups?.length) delete cleaned.skillGroups
+  if (!cleaned.experiences?.length) delete cleaned.experiences
 
   return cleaned
 }
